@@ -50,7 +50,7 @@ export default function Login() {
         </div>
         {/* Akhir Logo Tako */}
         {/* Awal Form */}
-        <div className="bg-green-900 w-full h-full p-4">Form</div>
+        <div className="bg-green-900 w-full h-full p-4">Form 2</div>
         {/* Akhir Form */}
       </div>
     </div>

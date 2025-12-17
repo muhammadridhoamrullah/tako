@@ -7,6 +7,7 @@ const {
   resendVerificationEmail,
 } = require("../services/emailService");
 const { comparePassword } = require("../helpers/bcrypt");
+const redis = require("../config/redis");
 
 class UserController {
   static async register(req, res, next) {
@@ -210,6 +211,14 @@ class UserController {
   static async me(req, res, next) {
     try {
       const userId = req.user.id;
+      const cacheKey = `user:${userId}`;
+
+      const cachedUser = await redis.get(cacheKey);
+      if (cachedUser) {
+        console.log("Dari Redis");
+
+        return res.status(200).json({ user: JSON.parse(cachedUser) });
+      }
 
       // Cari user
       const findUser = await User.findByPk(userId, {
@@ -220,10 +229,17 @@ class UserController {
 
       if (!findUser) throw { name: "AUTHEN_USER_NOT_FOUND" };
 
+      // Simpan ke Redis dengan expired time 1 jam
+      await redis.set(cacheKey, JSON.stringify(findUser), "EX", 3600);
+
+      console.log("Dari Database");
+
       res.status(200).json({
         user: findUser,
       });
     } catch (error) {
+      console.log(error, "Er");
+
       next(error);
     }
   }

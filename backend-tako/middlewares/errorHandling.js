@@ -36,6 +36,14 @@ async function errorHandler(err, req, res, next) {
     });
   } else if (err.name === "AUTHEN_USER_NOT_FOUND") {
     res.status(401).json({ message: "Authentication failed. User not found." });
+  } else if (err.name === "USER_VERIFY_EMAIL_ALREADY_VERIFIED") {
+    res.status(400).json({ message: "Email is already verified." });
+  } else if (err.name === "USER_FAILED_TO_VERIFY") {
+    res
+      .status(500)
+      .json({ message: "Failed to verify email. Please try again later." });
+  } else if (err.name === "RESEND_VERIFICATION_EMAIL_VALIDATION") {
+    res.status(400).json({ message: "Email is required" });
   }
 }
 

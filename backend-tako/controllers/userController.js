@@ -1,9 +1,10 @@
 const { Op } = require("sequelize");
-const { signToken, signTokenEmail } = require("../helpers/jwt");
+const { signToken, signTokenEmail, verifyToken } = require("../helpers/jwt");
 const { User, Donation } = require("../models/index");
 const {
   sendVerificationEmail,
   sendLoginNotificationEmail,
+  resendVerificationEmail,
 } = require("../services/emailService");
 const { comparePassword } = require("../helpers/bcrypt");
 
@@ -130,6 +131,102 @@ class UserController {
       next(error);
     }
   }
+
+  static async verifyEmail(req, res, next) {
+    try {
+      const { token } = req.query;
+
+      if (!token) throw { naame: "NO_TOKEN_PROVIDED" };
+
+      // Decoded token
+      const decoded = verifyToken(token);
+
+      // Cari user berdasarkan decoded.id
+      const findUser = await User.findByPk(decoded.id);
+
+      if (!findUser) throw { name: "AUTHEN_USER_NOT_FOUND" };
+
+      // Cek apakah ini sudah verified
+      if (findUser.isEmailVerified)
+        throw { name: "USER_VERIFY_EMAIL_ALREADY_VERIFIED" };
+
+      // Kalau belum, update isEmailVerified = true
+      const update = await User.update(
+        {
+          isEmailVerified: true,
+          updatedAt: new Date(),
+        },
+        {
+          where: {
+            id: decoded.id,
+          },
+        }
+      );
+
+      if (update[0] === 0) throw { name: "USER_FAILED_TO_VERIFY" };
+
+      res.status(200).json({ message: "Email verified successfully." });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resendVerificationEmail(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      if (!email) throw { name: "RESEND_VERIFICATION_EMAIL_VALIDATION" };
+
+      // Cari user berdasarkan email
+      const findUser = await User.findOne({
+        where: { email },
+      });
+
+      if (!findUser) throw { name: "AUTHEN_USER_NOT_FOUND" };
+
+      // Buat token JWT
+      const token = signTokenEmail({ id: findUser.id });
+
+      // Link verifikasi email
+      const link = `${process.env.URL}/verify-email?token=${token}`;
+
+      const dataVerifyEmail = {
+        username: findUser.username,
+        email: findUser.email,
+        link,
+      };
+
+      await resendVerificationEmail(dataVerifyEmail);
+
+      res.status(200).json({
+        message:
+          "Verification email resent successfully. Please check your email.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async me(req, res, next) {
+    try {
+      const userId = req.user.id;
+
+      // Cari user
+      const findUser = await User.findByPk(userId, {
+        attributes: {
+          exclude: ["password"],
+        },
+      });
+
+      if (!findUser) throw { name: "AUTHEN_USER_NOT_FOUND" };
+
+      res.status(200).json({
+        user: findUser,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = UserController;
@@ -141,3 +238,7 @@ module.exports = UserController;
 // USER_LOGIN_VALIDATION
 // USER_LOGIN_EMAIL_PASS_INVALID
 // USER_LOGIN_EMAIL_NOT_VERIFIED
+// AUTHEN_USER_NOT_FOUND
+// USER_VERIFY_EMAIL_ALREADY_VERIFIED
+// USER_FAILED_TO_VERIFY
+// RESEND_VERIFICATION_EMAIL_VALIDATION

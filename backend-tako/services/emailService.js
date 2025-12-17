@@ -30,6 +30,25 @@ async function sendVerificationEmail(data) {
   await transporter.sendMail(mailOptions);
 }
 
+async function resendVerificationEmail(data) {
+  const mailOptions = {
+    from: myEmail,
+    to: data.email,
+    subject: `Tako - Resend Email Verification`,
+    html: `
+        <h1>Hello, ${data.username}!</h1>
+        <p>You requested to resend the email verification. Please verify your email by clicking the link below:</p>
+        <a href="${data.link}">VERIFY EMAIL</a>
+        <p>If you did not request this, please ignore this email.</p>
+        <p>Thank you!</p>
+        <p>Best regards,</p>
+        <p>Tako Team</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
 async function sendLoginNotificationEmail(data) {
   const mailOptions = {
     from: myEmail,
@@ -52,4 +71,5 @@ async function sendLoginNotificationEmail(data) {
 module.exports = {
   sendVerificationEmail,
   sendLoginNotificationEmail,
+  resendVerificationEmail,
 };

@@ -1,7 +1,8 @@
 "use strict";
 const { Model } = require("sequelize");
-const { hashPassword } = require("../../backend-sbubu/helpers/bcrypt");
+
 const generateOverlayKey = require("../helpers/generateOverlayKey");
+const { hashPassword } = require("../helpers/bcrypt");
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**

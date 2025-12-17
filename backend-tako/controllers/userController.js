@@ -5,13 +5,14 @@ const {
   sendVerificationEmail,
   sendLoginNotificationEmail,
 } = require("../services/emailService");
-const { comparePassword } = require("../../backend-sbubu/helpers/bcrypt");
+const { comparePassword } = require("../helpers/bcrypt");
 
 class UserController {
   static async register(req, res, next) {
     try {
       let { name, username, email, password } = req.body;
 
+      // Test
       // Validasi input, semua field harus diisi
       if (!name || !username || !email || !password) {
         throw { name: "USER_REGISTER_VALIDATION" };
